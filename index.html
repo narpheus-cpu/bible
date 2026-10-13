@@ -19,11 +19,10 @@
 @media(max-width:1050px){.finder-workspace{grid-template-columns:minmax(0,1fr) 320px}.finder-mapstage{height:580px}}
 @media(max-width:760px){.main-tabs{gap:7px;padding:13px 0}.main-tabs button{font-size:20px;padding:9px 6px}.finder-intro h2{font-size:24px}.finder-input-row{flex-wrap:wrap}.finder-input-row input{flex-basis:100%;width:100%}.finder-input-row button{flex:1}.finder-answer{padding:16px}.finder-answer h2{font-size:25px}.finder-answer .current-country{font-size:23px}.finder-workspace{display:flex;flex-direction:column;gap:15px}.finder-mapstage{height:54svh;min-height:380px;max-height:570px}.finder-results-panel{height:auto}.finder-results-panel .place-list{max-height:390px}.finder-detail{padding:17px}.finder-options{max-height:390px;overflow:auto}.finder-option{font-size:18px}.finder-ref-list{font-size:17px}.finder-resources .resource details>div{font-size:18px}.finder-form label{font-size:18px}.finder-answer .tiny{font-size:16px}}@media print{.main-tabs,.finder-form,.finder-examples,.finder-results-panel{display:none}.finder-workspace{display:block}.finder-mapstage{height:450px}}
 
-.finder-active .mast .eyebrow,.finder-active .mast p,.finder-active .mast .offline{display:none}.finder-active .mast{padding:14px 0}.finder-active .mast h1{font-size:28px;margin:0}
+
 </style>
 </head>
 <body>
-<header class="mast"><div class="wrap mast-row"><div><div class="offline">지도와 자료 내장 · 오프라인 사용</div><div class="eyebrow">사도행전을 따라 읽는 지도</div><h1>바울의 길</h1><p>도시를 누르고, 여정을 따라가며 복음이 전해진 자리를 살펴보세요.</p></div><button id="download" class="file-button">파일 저장 ↓</button></div></header>
 <main class="wrap"><nav class="main-tabs" role="tablist" aria-label="지도 종류"><button id="paul-tab" role="tab" aria-selected="true" aria-controls="paul-page" tabindex="0">바울의 길</button><button id="finder-tab" role="tab" aria-selected="false" aria-controls="finder-page" tabindex="-1">지명 찾기</button></nav>
 <section id="paul-page" role="tabpanel" aria-labelledby="paul-tab">
 <noscript>이 지도는 자바스크립트가 필요합니다. 자바스크립트를 허용하는 브라우저에서 파일을 열어 주세요.</noscript>
@@ -62,7 +61,6 @@
 <script>
 'use strict';
 document.addEventListener('DOMContentLoaded',()=>{
-const originalHTML='<!DOCTYPE html>\n'+document.documentElement.outerHTML;
 const DATA=JSON.parse(document.getElementById('app-data').textContent);
 const P=new Map(DATA.places.map(p=>[p.id,p]));
 const J=new Map(DATA.journeys.map(j=>[j.id,j]));
@@ -108,7 +106,6 @@ svg.addEventListener('pointerdown',e=>{if(e.button!==0&&e.pointerType==='mouse')
 svg.addEventListener('pointermove',e=>{if(!pointers.has(e.pointerId))return;pointers.set(e.pointerId,[e.clientX,e.clientY]);const pts=[...pointers.values()];if(gesture?.kind==='pan'&&pts.length===1){const dx=pts[0][0]-gesture.start[0],dy=pts[0][1]-gesture.start[1];if(Math.hypot(dx,dy)<5&&!suppressClick)return;suppress();const c=gesture.camera;camera={...c,x:c.x-dx*c.w/svg.clientWidth,y:c.y-dy*c.h/svg.clientHeight};applyCamera()}else if(gesture?.kind==='pinch'&&pts.length>=2){suppress();const dist=Math.max(1,Math.hypot(pts[0][0]-pts[1][0],pts[0][1]-pts[1][1])),c=gesture.camera;const w=Math.max(70,Math.min(2400,c.w*gesture.distance/dist)),h=c.h*w/c.w,r=svg.getBoundingClientRect(),cx=(pts[0][0]+pts[1][0])/2,cy=(pts[0][1]+pts[1][1])/2;camera={x:gesture.center[0]-(cx-r.left)*w/r.width,y:gesture.center[1]-(cy-r.top)*h/r.height,w,h};applyCamera()}});
 function endPointer(e){pointers.delete(e.pointerId);if(pointers.size)beginGesture();else gesture=null}svg.addEventListener('pointerup',endPointer);svg.addEventListener('pointercancel',endPointer);svg.addEventListener('pointerleave',e=>{if(pointers.has(e.pointerId)&&!svg.hasPointerCapture(e.pointerId))endPointer(e)});
 svg.addEventListener('wheel',e=>{if(!e.ctrlKey&&!e.metaKey)return;e.preventDefault();zoom(e.deltaY>0?1.12:.89,svgPoint(e.clientX,e.clientY))},{passive:false});svg.addEventListener('keydown',e=>{if(e.target!==svg)return;const moves={ArrowLeft:[-.1,0],ArrowRight:[.1,0],ArrowUp:[0,-.1],ArrowDown:[0,.1]};if(moves[e.key]){e.preventDefault();camera.x+=camera.w*moves[e.key][0];camera.y+=camera.h*moves[e.key][1];applyCamera()}else if(['+','=','-','_'].includes(e.key)){e.preventDefault();zoom(e.key==='+'||e.key==='='?.8:1.25)}});
-$('download').addEventListener('click',()=>{const blob=new Blob([originalHTML],{type:'text/html;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='바울_전도여행_지도.html';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);notify('단일 HTML 파일 저장을 요청했습니다.')});
 $('source-rows').innerHTML=DATA.places.map(p=>`<tr><td>${esc(p.ancient)}</td><td>${esc(p.modern)}${p.uncertain?' · 대표 위치/추정':''}</td><td><a href="${esc(p.source)}" target="_blank" rel="noopener noreferrer">근거 ↗</a></td></tr>`).join('');
 for(let lon=10;lon<=40;lon+=5){const a=project(lon,29),b=project(lon,45);$('grid').append(el('path',{d:`M${a}L${b}`}))}for(let lat=30;lat<=45;lat+=5){const a=project(9,lat),b=project(39,lat);$('grid').append(el('path',{d:`M${a}L${b}`}))}
 let oldWidth=svg.clientWidth,oldHeight=svg.clientHeight;new ResizeObserver(()=>{const w=svg.clientWidth,h=svg.clientHeight;if(!w||!h)return;if(Math.abs(w-oldWidth)<2&&Math.abs(h-oldHeight)<2)return;const cx=camera.x+camera.w/2,cy=camera.y+camera.h/2;camera.h=camera.w*h/w;camera.x=cx-camera.w/2;camera.y=cy-camera.h/2;oldWidth=w;oldHeight=h;applyCamera()}).observe(svg);update({refit:true});
